@@ -1,0 +1,96 @@
+/* Section Blocks 1.1.2 — quiet row actions; the archive reads like a folded list and ends in the section divider. */
+
+/* Title row: keep room on the right for the back-to-top button. */
+.cm-editor .cm-line.sb-title-line { position: relative; padding-inline-end: 2em; }
+.cm-editor button.sb-top {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 1.5em; height: 1.5em; padding: 0; margin: 0; border: 0; box-shadow: none; border-radius: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; color: var(--text-faint); opacity: .55; cursor: pointer; font-size: 1rem;
+}
+.cm-line.sb-title-line:hover .sb-top { opacity: .9; color: var(--text-muted); }
+.cm-editor button.sb-top:hover { opacity: 1; color: var(--text-normal); background: var(--background-modifier-hover); }
+.sb-top svg { width: 15px; height: 15px; }
+
+/* Row actions: two small buttons in front of every link/text row. */
+.sb-actions {
+  display: inline-flex; align-items: center; gap: 1px;
+  margin-inline-end: .45em; vertical-align: baseline; white-space: nowrap;
+  user-select: none; -webkit-user-select: none;
+}
+.cm-editor button.sb-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.45em; height: 1.45em; padding: 0; margin: 0; border: 0; box-shadow: none; border-radius: 4px;
+  background: transparent; color: var(--text-muted); opacity: .38; cursor: pointer; vertical-align: -.32em;
+  transition: opacity .12s ease, background-color .12s ease;
+}
+.cm-line:hover .sb-btn, .sb-archive-item:hover .sb-btn { opacity: .78; }
+.cm-editor button.sb-btn:hover { opacity: 1; color: var(--text-normal); background: var(--background-modifier-hover); }
+.cm-editor button.sb-btn:disabled { opacity: .16; cursor: default; background: transparent; color: var(--text-muted); }
+.cm-editor button.sb-btn:focus-visible { outline: 1px solid var(--text-muted); outline-offset: 2px; }
+.sb-btn svg { width: 14px; height: 14px; }
+
+/* Archive: a muted fold button sized by its content, parked rows beneath, and the
+   divider that closes the section. Spacing separates it from the rows above. */
+.sb-archive { display: block; margin: 14px 0 0; user-select: none; -webkit-user-select: none; }
+.cm-content > .sb-archive.nsb-hierarchy-visual { margin-left: var(--nsb-hierarchy-offset) !important; }
+.cm-editor .sb-archive-head {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45em;
+  width: auto; min-width: 0; height: auto; min-height: 0; box-sizing: border-box;
+  padding: .2em .65em; margin: 0; border: 0; box-shadow: none; border-radius: 4px;
+  background: transparent; color: var(--text-muted); font-size: var(--font-smaller); font-weight: 500; letter-spacing: .02em;
+  line-height: 1.5; white-space: nowrap; cursor: pointer; vertical-align: top;
+  -webkit-tap-highlight-color: transparent;
+}
+.cm-editor .sb-archive-head:focus-visible { outline: 1px solid var(--text-muted); outline-offset: 2px; }
+/* Touch: a slightly taller target, same centring. */
+body.is-mobile .cm-editor .sb-archive-head { padding: .32em .8em; }
+.cm-editor .sb-archive-head:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+.sb-archive-head > * { display: block; flex: none; margin: 0; }
+.sb-archive-triangle {
+  width: .7em; height: .7em; fill: currentColor; opacity: .8;
+  transform-origin: 50% 50%; transition: transform .12s ease, opacity .12s ease;
+}
+.sb-archive.is-open .sb-archive-triangle { transform: rotate(90deg); }
+.sb-archive.is-empty .sb-archive-triangle { opacity: .28; }
+.sb-archive-count { color: var(--text-faint); font-weight: 400; font-variant-numeric: tabular-nums; }
+.sb-archive-list { list-style: none; margin: 2px 0 0; padding: 0; }
+.sb-archive-item { display: flex; align-items: baseline; padding: 1px 0; color: var(--text-muted); line-height: var(--line-height-normal, 1.5); }
+.sb-archive-item .sb-btn { flex: none; margin-inline-end: .45em; }
+.sb-archive-link { cursor: pointer; }
+.sb-archive-text { white-space: pre-wrap; }
+/* One text row tall, so the editor's plus button centres on the rule. */
+.sb-divider { position: relative; height: 1.5em; line-height: 1.5em; margin-top: .45em; }
+/* Reading view and export: the same rule after the section's last rows. */
+hr.sb-divider-hr { margin: .9em 0 .6em; }
+.sb-divider::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  border-top: var(--hr-thickness, 2px) solid var(--hr-color, var(--background-modifier-border));
+}
+
+/* Index: a row of links with breathing room inside the block's hover frame, and two
+   quiet tools at the end. */
+.sb-index { display: flex; flex-wrap: wrap; align-items: center; gap: .15em .1em; padding: .45em .55em; }
+.sb-index-title {
+  margin-inline-end: .7em; color: var(--text-faint); font-size: var(--font-smaller);
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+.sb-index a.sb-index-link { padding: .1em .5em; border-radius: var(--radius-s, 4px); text-decoration: none; cursor: pointer; }
+.sb-index a.sb-index-link:hover { background: var(--background-modifier-hover); text-decoration: none; }
+.sb-index a.sb-index-link.is-unresolved { opacity: .55; }
+.sb-index-empty { padding: .1em .5em; color: var(--text-faint); font-size: var(--font-smaller); }
+.sb-index-tools { display: inline-flex; align-items: center; gap: 2px; margin-inline-start: .35em; opacity: .32; transition: opacity .12s ease; }
+.sb-index:hover .sb-index-tools, .sb-index-tools:focus-within { opacity: .9; }
+.sb-index button.sb-index-tool {
+  display: inline-flex; align-items: center; justify-content: center; width: 1.6em; height: 1.6em; min-height: 0;
+  padding: 0; margin: 0; border: 0; box-shadow: none; border-radius: 4px; background: transparent; color: var(--text-muted); cursor: pointer;
+}
+.sb-index button.sb-index-tool:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.sb-index-tool svg { width: 15px; height: 15px; }
+.sb-index button.sb-index-reset { margin-inline-start: .6em; }
+.sb-index-modal .sb-index-row .setting-item-info { display: none; }
+.sb-index-modal .sb-index-row .setting-item-control { flex: 1 1 auto; justify-content: flex-start; }
+.sb-index-modal .sb-index-row input[type="text"] { flex: 1 1 8em; min-width: 6em; }
+.sb-index-modal .sb-index-row button:not(.clickable-icon) { max-width: 16em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-index-modal .sb-index-footer { border-top: 0; }
+@media (prefers-reduced-motion: reduce) { .sb-archive-triangle, .cm-editor button.sb-btn, .sb-index-tools { transition: none; } }
