@@ -1,4 +1,8 @@
-/* Section Blocks 1.2.0 · paipa. Source: this file (plugin.js / core.js sources retired). */
+/*
+ * Section Blocks 1.2.1 - by paipa, MIT License
+ * https://github.com/Paipa03/obsidian-section-blocks
+ */
+
 "use strict";
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __commonJS = (cb, mod) => function __require() {
