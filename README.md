@@ -53,6 +53,7 @@ Windows, macOS, Linux, iPhone / iPad and Android. Folder names are built with ch
 ## Good to know
 
 - The organize commands **move files and rewrite links**. Back up your vault (or use Obsidian Sync / git history) before the first **Organize media of every note**.
+- Interface in English and Chinese: follows Obsidian's language by default, or pick one under the plugin's **Language** setting.
 - To organize media for the whole vault the plugin lists all files in it. It only works inside your vault and nothing is sent anywhere.
 - Works on its own. With [Paipa Gallery](https://github.com/Paipa03/obsidian-paipa-gallery), files dropped into a gallery follow the same `<note> media` rule; with [Editor Enhancer](https://github.com/Paipa03/obsidian-editor-enhancer), sections join its block menu.
 

@@ -1,9 +1,94 @@
 /*
- * Section Blocks 1.2.1 - by paipa, MIT License
+ * Section Blocks 1.3.0 - by paipa, MIT License
  * https://github.com/Paipa03/obsidian-section-blocks
  */
 
 "use strict";
+
+// ---- i18n ----
+// UI text is English; PAIPA_ZH maps each English string to Simplified Chinese.
+// The language comes from the plugin's "language" setting ("auto" follows Obsidian).
+let paipaLang = "auto";
+function paipaObsidianLang() {
+  try {
+    const o = require("obsidian");
+    const l = (typeof o.getLanguage === "function" && o.getLanguage()) || window.localStorage.getItem("language") || "en";
+    return /^zh/i.test(String(l)) ? "zh" : "en";
+  } catch (e) { return "en"; }
+}
+function paipaEffectiveLang() {
+  return paipaLang === "auto" ? paipaObsidianLang() : paipaLang;
+}
+var PAIPA_ZH = {
+  "Language": "语言",
+  "Follow Obsidian's language, or choose one for this plugin.": "跟随 Obsidian 的语言，或为本插件单独选择。",
+  "Follow Obsidian": "跟随 Obsidian",
+  "Make link and page": "生成链接和页面",
+  "Already a link": "已经是链接",
+  "Archive": "归档",
+  "Restore": "恢复",
+  "Collapse archive": "折叠归档",
+  "Expand archive": "展开归档",
+  "Link to a section, heading or note…": "链接到分区、标题或笔记…",
+  "Section": "分区",
+  "Heading": "标题",
+  "Note": "笔记",
+  "Rename entry": "重命名条目",
+  "Label": "名称",
+  "Save": "保存",
+  "Cancel": "取消",
+  "Index": "索引",
+  "Title": "标题",
+  "Optional caption in front of the entries.": "可选，显示在条目前面的说明文字。",
+  "none": "无",
+  "List sections automatically": "自动列出分区",
+  "Every section of this note is listed in document order and follows renames and moves.": "按文档顺序列出本笔记的每个分区，并跟随重命名和移动自动更新。",
+  "Hidden sections": "已隐藏的分区",
+  "Show all": "全部显示",
+  "Entries": "条目",
+  "Links you added. They follow the sections.": "你手动添加的链接，排在分区之后。",
+  "No entries of your own yet.": "还没有手动添加的条目。",
+  "Change target": "更改目标",
+  "Move up": "上移",
+  "Move down": "下移",
+  "Remove": "移除",
+  "Add entry": "添加条目",
+  "Back to top": "回到顶部",
+  "Create section": "创建分区",
+  "Insert index at top": "在顶部插入索引",
+  "Insert index here": "在此处插入索引",
+  "Organize section pages of this note": "整理本笔记的分区页面",
+  "Organize media of this note": "整理本笔记的媒体文件",
+  "Organize media of every note": "整理所有笔记的媒体文件",
+  "Moved {count} page(s).": "已移动 {count} 个页面。",
+  "Section pages are already in place.": "分区页面都已在正确位置。",
+  "Moved {count} media file(s).": "已移动 {count} 个媒体文件。",
+  "Media files are already in place.": "媒体文件都已在正确位置。",
+  "Moved {count} item(s).": "已移动 {count} 项。",
+  "Could not find this index block in the note.": "在笔记中找不到这个索引块。",
+  "This index could not be read.": "无法读取这个索引。",
+  "Reset": "重置",
+  "Empty index": "空索引",
+  "Edit index": "编辑索引",
+  "Add entry…": "添加条目…",
+  "Edit index…": "编辑索引…",
+  "Open in new tab": "在新标签页中打开",
+  "Rename…": "重命名…",
+  "Change target…": "更改目标…",
+  "Move left": "左移",
+  "Move right": "右移",
+  "Pages root": "页面根目录",
+  "Section pages are created in <root>/<Section title>/. Leave empty for the vault root.": "分区页面创建在 <根目录>/<分区标题>/ 中。留空则使用仓库根目录。",
+  "vault root": "仓库根目录",
+  "Organize media": "整理媒体文件",
+  'Keep every image / video a note shows in a "<note name> media" folder beside the note: files dropped or pasted into the note (or into one of its galleries) are created there, and media the note embeds from elsewhere is moved there. Files already in another note\'s media folder stay put.': "把笔记显示的每张图片 / 每个视频放进笔记旁边的“<笔记名> media”文件夹：拖入或粘贴到笔记（或其画廊）中的文件直接创建在那里，笔记从别处嵌入的媒体会移到那里。已在其他笔记媒体文件夹中的文件保持不动。"
+};
+function paipaT(en, vars) {
+  let s = paipaEffectiveLang() === "zh" && Object.prototype.hasOwnProperty.call(PAIPA_ZH, en) ? PAIPA_ZH[en] : en;
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m);
+  return s;
+}
+// ---- end i18n ----
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __commonJS = (cb, mod) => function __require() {
   try {
@@ -453,9 +538,10 @@ var RowButtons = class extends WidgetType {
     super();
     this.plugin = plugin;
     this.kind = kind;
+    this.lang = paipaEffectiveLang();
   }
   eq(o) {
-    return o.plugin === this.plugin && o.kind === this.kind;
+    return o.plugin === this.plugin && o.kind === this.kind && o.lang === this.lang;
   }
   ignoreEvent() {
     return true;
@@ -469,13 +555,13 @@ var RowButtons = class extends WidgetType {
       view.dispatch({ selection: EditorSelection.cursor(view.posAtDOM(root), 1) });
       view.focus();
     });
-    const link = button(doc, root, "sb-link", "link", "Make link and page", () => this.plugin.linkRow(view, view.posAtDOM(root)));
+    const link = button(doc, root, "sb-link", "link", paipaT("Make link and page"), () => this.plugin.linkRow(view, view.posAtDOM(root)));
     if (this.kind === "link") {
       link.disabled = true;
-      link.title = "Already a link";
+      link.title = paipaT("Already a link");
       link.setAttribute("aria-disabled", "true");
     }
-    button(doc, root, "sb-archive-btn", "archive", "Archive", () => this.plugin.moveRow(view, view.posAtDOM(root), true));
+    button(doc, root, "sb-archive-btn", "archive", paipaT("Archive"), () => this.plugin.moveRow(view, view.posAtDOM(root), true));
     return root;
   }
 };
@@ -487,9 +573,10 @@ var ArchiveWidget = class extends WidgetType {
     this.openLine = section.openLine;
     this.items = section.items.filter((r) => r.kind !== "blank").map((r) => ({ offset: r.line - section.openLine, kind: r.kind, text: r.text.trim() }));
     this.key = JSON.stringify(this.items);
+    this.lang = paipaEffectiveLang();
   }
   eq(o) {
-    return o.plugin === this.plugin && o.open === this.open && o.openLine === this.openLine && o.key === this.key;
+    return o.plugin === this.plugin && o.open === this.open && o.openLine === this.openLine && o.key === this.key && o.lang === this.lang;
   }
   ignoreEvent() {
     return true;
@@ -513,14 +600,14 @@ var ArchiveWidget = class extends WidgetType {
         head.click();
       }
     });
-    head.title = (this.open ? "Collapse" : "Expand") + " archive";
+    head.title = this.open ? paipaT("Collapse archive") : paipaT("Expand archive");
     const triangle = doc.createElementNS(SVG, "svg"), shape = doc.createElementNS(SVG, "path");
     triangle.setAttribute("viewBox", "0 0 10 10");
     triangle.setAttribute("class", "sb-archive-triangle");
     shape.setAttribute("d", "M2.6 1.3 8.4 5 2.6 8.7Z");
     triangle.appendChild(shape);
     head.appendChild(triangle);
-    make(doc, "span", "sb-archive-label", head).textContent = "Archive";
+    make(doc, "span", "sb-archive-label", head).textContent = paipaT("Archive");
     if (this.items.length) make(doc, "span", "sb-archive-count", head).textContent = String(this.items.length);
     head.addEventListener("click", (e) => {
       stop(e);
@@ -537,7 +624,7 @@ var ArchiveWidget = class extends WidgetType {
     for (const item of this.items) {
       const li = make(doc, "li", "sb-archive-item", list);
       if (item.kind === "text" || item.kind === "link") {
-        button(doc, li, "sb-restore", "restore", "Restore", () => {
+        button(doc, li, "sb-restore", "restore", paipaT("Restore"), () => {
           const line = view.state.doc.lineAt(view.posAtDOM(root)).number - 1 + item.offset;
           plugin.moveRow(view, view.state.doc.line(line + 1).from, false);
         });
@@ -565,14 +652,14 @@ var TargetSuggest = class extends FuzzySuggestModal {
     this.plugin = plugin;
     this.file = file;
     this.onChoose = onChoose;
-    this.setPlaceholder("Link to a section, heading or note\u2026");
+    this.setPlaceholder(paipaT("Link to a section, heading or note\u2026"));
   }
   getItems() {
     const { app } = this.plugin, out = [], cache = app.metadataCache.getFileCache(this.file);
     const sections = new Set(this.plugin.sectionTitles(this.file));
-    for (const h of cache?.headings || []) out.push({ label: h.heading, link: core.headingLink(h.heading), hint: sections.has(h.heading) ? "Section" : "Heading" });
+    for (const h of cache?.headings || []) out.push({ label: h.heading, link: core.headingLink(h.heading), hint: sections.has(h.heading) ? paipaT("Section") : paipaT("Heading") });
     for (const f of app.vault.getMarkdownFiles()) {
-      if (f.path !== this.file.path) out.push({ label: f.basename, link: app.metadataCache.fileToLinktext(f, this.file.path), hint: f.parent && f.parent.path !== "/" ? f.parent.path : "Note" });
+      if (f.path !== this.file.path) out.push({ label: f.basename, link: app.metadataCache.fileToLinktext(f, this.file.path), hint: f.parent && f.parent.path !== "/" ? f.parent.path : paipaT("Note") });
     }
     return out;
   }
@@ -590,13 +677,13 @@ var RenamePrompt = class extends Modal {
     this.onSubmit = onSubmit;
   }
   onOpen() {
-    this.titleEl.setText("Rename entry");
+    this.titleEl.setText(paipaT("Rename entry"));
     const submit = () => {
       const v = this.value.trim();
       if (v) this.onSubmit(v);
       this.close();
     };
-    new Setting(this.contentEl).setName("Label").addText((t) => {
+    new Setting(this.contentEl).setName(paipaT("Label")).addText((t) => {
       t.setValue(this.value).onChange((v) => {
         this.value = v;
       });
@@ -611,7 +698,7 @@ var RenamePrompt = class extends Modal {
         t.inputEl.select();
       }, 0);
     });
-    new Setting(this.contentEl).addButton((b) => b.setButtonText("Save").setCta().onClick(submit)).addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()));
+    new Setting(this.contentEl).addButton((b) => b.setButtonText(paipaT("Save")).setCta().onClick(submit)).addButton((b) => b.setButtonText(paipaT("Cancel")).onClick(() => this.close()));
   }
   onClose() {
     this.contentEl.empty();
@@ -626,7 +713,7 @@ var IndexModal = class extends Modal {
     this.model = JSON.parse(JSON.stringify(model));
   }
   onOpen() {
-    this.titleEl.setText("Index");
+    this.titleEl.setText(paipaT("Index"));
     this.modalEl.addClass("sb-index-modal");
     this.draw();
   }
@@ -636,59 +723,60 @@ var IndexModal = class extends Modal {
   draw() {
     const el = this.contentEl, m = this.model;
     el.empty();
-    new Setting(el).setName("Title").setDesc("Optional caption in front of the entries.").addText((t) => t.setPlaceholder("none").setValue(m.title).onChange((v) => {
+    new Setting(el).setName(paipaT("Title")).setDesc(paipaT("Optional caption in front of the entries.")).addText((t) => t.setPlaceholder(paipaT("none")).setValue(m.title).onChange((v) => {
       m.title = v.trim();
     }));
-    new Setting(el).setName("List sections automatically").setDesc("Every section of this note is listed in document order and follows renames and moves.").addToggle((t) => t.setValue(m.auto).onChange((v) => {
+    new Setting(el).setName(paipaT("List sections automatically")).setDesc(paipaT("Every section of this note is listed in document order and follows renames and moves.")).addToggle((t) => t.setValue(m.auto).onChange((v) => {
       m.auto = v;
       this.draw();
     }));
     if (m.auto && m.hidden.length) {
-      new Setting(el).setName("Hidden sections").setDesc(m.hidden.map((h) => h.slice(1)).join(", ")).addButton((b) => b.setButtonText("Show all").onClick(() => {
+      new Setting(el).setName(paipaT("Hidden sections")).setDesc(m.hidden.map((h) => h.slice(1)).join(", ")).addButton((b) => b.setButtonText(paipaT("Show all")).onClick(() => {
         m.hidden = [];
         this.draw();
       }));
     }
-    new Setting(el).setName("Entries").setDesc(m.items.length ? "Links you added. They follow the sections." : "No entries of your own yet.").setHeading();
+    new Setting(el).setName(paipaT("Entries")).setDesc(m.items.length ? paipaT("Links you added. They follow the sections.") : paipaT("No entries of your own yet.")).setHeading();
     m.items.forEach((item, at) => {
       const row = new Setting(el).setClass("sb-index-row");
-      row.addText((t) => t.setPlaceholder("Label").setValue(item.label).onChange((v) => {
+      row.addText((t) => t.setPlaceholder(paipaT("Label")).setValue(item.label).onChange((v) => {
         item.label = v.trim() || core.linkLabel(item.link);
       }));
-      row.addButton((b) => b.setButtonText(item.link).setTooltip("Change target").onClick(() => new TargetSuggest(this.plugin, this.file, (picked) => {
+      row.addButton((b) => b.setButtonText(item.link).setTooltip(paipaT("Change target")).onClick(() => new TargetSuggest(this.plugin, this.file, (picked) => {
         item.link = picked.link;
         this.draw();
       }).open()));
-      row.addExtraButton((b) => b.setIcon("arrow-up").setTooltip("Move up").setDisabled(at === 0).onClick(() => {
+      row.addExtraButton((b) => b.setIcon("arrow-up").setTooltip(paipaT("Move up")).setDisabled(at === 0).onClick(() => {
         this.model = core.moveIndexEntry(m, at, -1);
         this.draw();
       }));
-      row.addExtraButton((b) => b.setIcon("arrow-down").setTooltip("Move down").setDisabled(at === m.items.length - 1).onClick(() => {
+      row.addExtraButton((b) => b.setIcon("arrow-down").setTooltip(paipaT("Move down")).setDisabled(at === m.items.length - 1).onClick(() => {
         this.model = core.moveIndexEntry(m, at, 1);
         this.draw();
       }));
-      row.addExtraButton((b) => b.setIcon("trash-2").setTooltip("Remove").onClick(() => {
+      row.addExtraButton((b) => b.setIcon("trash-2").setTooltip(paipaT("Remove")).onClick(() => {
         m.items.splice(at, 1);
         this.draw();
       }));
     });
-    new Setting(el).addButton((b) => b.setButtonText("Add entry").setIcon("plus").onClick(() => new TargetSuggest(this.plugin, this.file, (picked) => {
+    new Setting(el).addButton((b) => b.setButtonText(paipaT("Add entry")).setIcon("plus").onClick(() => new TargetSuggest(this.plugin, this.file, (picked) => {
       this.model = core.addIndexEntry(m, picked);
       this.draw();
     }).open()));
-    new Setting(el).setClass("sb-index-footer").addButton((b) => b.setButtonText("Save").setCta().onClick(() => {
+    new Setting(el).setClass("sb-index-footer").addButton((b) => b.setButtonText(paipaT("Save")).setCta().onClick(() => {
       this.save(this.model);
       this.close();
-    })).addButton((b) => b.setButtonText("Cancel").onClick(() => this.close()));
+    })).addButton((b) => b.setButtonText(paipaT("Cancel")).onClick(() => this.close()));
   }
 };
 var TopButton = class extends WidgetType {
   constructor(plugin) {
     super();
     this.plugin = plugin;
+    this.lang = paipaEffectiveLang();
   }
   eq(o) {
-    return o.plugin === this.plugin;
+    return o.plugin === this.plugin && o.lang === this.lang;
   }
   ignoreEvent() {
     return true;
@@ -697,8 +785,8 @@ var TopButton = class extends WidgetType {
     const b = make(view.dom.ownerDocument, "button", "sb-top clickable-icon");
     b.type = "button";
     b.contentEditable = "false";
-    b.title = "Back to top";
-    b.setAttribute("aria-label", "Back to top");
+    b.title = paipaT("Back to top");
+    b.setAttribute("aria-label", paipaT("Back to top"));
     setIcon(b, icon("top"));
     b.addEventListener("mousedown", stop);
     b.addEventListener("click", (e) => {
@@ -715,7 +803,8 @@ var TopButton = class extends WidgetType {
 var SectionBlocks = class extends Plugin {
   async onload() {
     const saved = await this.loadData() || {};
-    this.settings = Object.assign({ mediaEnabled: saved.imagesEnabled !== false, pagesRoot: "" }, saved);
+    this.settings = Object.assign({ mediaEnabled: saved.imagesEnabled !== false, pagesRoot: "", language: "auto" }, saved);
+    paipaLang = this.settings.language || "auto";
     this.busy = /* @__PURE__ */ new Set();
     this.contextHit = null;
     this.core = core;
@@ -742,10 +831,10 @@ var SectionBlocks = class extends Plugin {
       const hit = this.contextHit, doc = editor.cm.state.doc;
       const pointer = hit && hit.cm === editor.cm && hit.doc === doc && Date.now() - hit.at < 1e3;
       const line = pointer ? hit.line : editor.getCursor().line;
-      menu.addItem((i) => i.setTitle("Section").setIcon(icon("section")).setSection("editor-enhancer").onClick(() => {
+      menu.addItem((i) => i.setTitle(paipaT("Section")).setIcon(icon("section")).setSection("editor-enhancer").onClick(() => {
         if (editor.cm.state.doc === doc) this.createSection(editor.cm, line);
       }));
-      menu.addItem((i) => i.setTitle("Index").setIcon(icon("index")).setSection("editor-enhancer").onClick(() => {
+      menu.addItem((i) => i.setTitle(paipaT("Index")).setIcon(icon("index")).setSection("editor-enhancer").onClick(() => {
         if (editor.cm.state.doc === doc) this.insertIndexHere(editor.cm, line);
       }));
     }));
@@ -757,20 +846,20 @@ var SectionBlocks = class extends Plugin {
       const pos = cm.posAtCoords({ x: e.clientX, y: e.clientY });
       if (pos != null) this.contextHit = { cm, doc: cm.state.doc, line: cm.state.doc.lineAt(pos).number - 1, at: Date.now() };
     }, true);
-    this.addCommand({ id: "create-section", name: "Create section", editorCallback: (editor) => this.createSection(editor.cm, editor.getCursor().line) });
-    this.addCommand({ id: "insert-index", name: "Insert index at top", editorCallback: (editor) => this.insertIndex(editor.cm) });
-    this.addCommand({ id: "insert-index-here", name: "Insert index here", editorCallback: (editor) => this.insertIndexHere(editor.cm, editor.getCursor().line) });
-    this.addCommand({ id: "organize-pages", name: "Organize section pages of this note", editorCallback: async (editor, view) => {
+    this.addCommand({ id: "create-section", name: paipaT("Create section"), editorCallback: (editor) => this.createSection(editor.cm, editor.getCursor().line) });
+    this.addCommand({ id: "insert-index", name: paipaT("Insert index at top"), editorCallback: (editor) => this.insertIndex(editor.cm) });
+    this.addCommand({ id: "insert-index-here", name: paipaT("Insert index here"), editorCallback: (editor) => this.insertIndexHere(editor.cm, editor.getCursor().line) });
+    this.addCommand({ id: "organize-pages", name: paipaT("Organize section pages of this note"), editorCallback: async (editor, view) => {
       const moved = await this.organizePages(view.file);
-      new Notice(moved.length ? "Moved " + moved.length + " page(s)." : "Section pages are already in place.");
+      new Notice(moved.length ? paipaT("Moved {count} page(s).", { count: moved.length }) : paipaT("Section pages are already in place."));
     } });
-    this.addCommand({ id: "organize-media", name: "Organize media of this note", editorCallback: async (editor, view) => {
+    this.addCommand({ id: "organize-media", name: paipaT("Organize media of this note"), editorCallback: async (editor, view) => {
       const moved = await this.tidyMedia(view.file);
-      new Notice(moved.length ? "Moved " + moved.length + " media file(s)." : "Media files are already in place.");
+      new Notice(moved.length ? paipaT("Moved {count} media file(s).", { count: moved.length }) : paipaT("Media files are already in place."));
     } });
-    this.addCommand({ id: "organize-images", name: "Organize media of every note", callback: async () => {
+    this.addCommand({ id: "organize-images", name: paipaT("Organize media of every note"), callback: async () => {
       const moved = await this.organizeMediaAll();
-      new Notice(moved.length ? "Moved " + moved.length + " item(s)." : "Media files are already in place.");
+      new Notice(moved.length ? paipaT("Moved {count} item(s).", { count: moved.length }) : paipaT("Media files are already in place."));
     } });
     this.registerEvent(this.app.metadataCache.on("changed", (file, data, cache) => {
       if (this.settings.mediaEnabled && file.extension === "md") this.tidyMedia(file, cache).catch((e) => console.error("Section Blocks:", e));
@@ -944,12 +1033,12 @@ var SectionBlocks = class extends Plugin {
       this.noteText.set(f.path, text);
       el.empty();
       const nav = make(doc, "nav", "sb-index", el);
-      nav.setAttribute("aria-label", model?.title || "Index");
+      nav.setAttribute("aria-label", model?.title || paipaT("Index"));
       if (!model) {
-        make(doc, "span", "sb-index-empty", nav).textContent = "This index could not be read.";
+        make(doc, "span", "sb-index-empty", nav).textContent = paipaT("This index could not be read.");
         const reset = make(doc, "button", "sb-index-reset", nav);
         reset.type = "button";
-        reset.textContent = "Reset";
+        reset.textContent = paipaT("Reset");
         reset.addEventListener("click", (e) => {
           stop(e);
           save(core.parseIndex(""));
@@ -973,18 +1062,18 @@ var SectionBlocks = class extends Plugin {
           this.entryMenu(e, f, model, entry, save);
         });
       }
-      if (!entries.length) make(doc, "span", "sb-index-empty", nav).textContent = "Empty index";
+      if (!entries.length) make(doc, "span", "sb-index-empty", nav).textContent = paipaT("Empty index");
       const tools = make(doc, "span", "sb-index-tools", nav);
-      tool(tools, "add", "Add entry", () => new TargetSuggest(this, f, (picked) => save(core.addIndexEntry(model, picked))).open());
-      tool(tools, "edit", "Edit index", () => new IndexModal(this, f, model, save).open());
+      tool(tools, "add", paipaT("Add entry"), () => new TargetSuggest(this, f, (picked) => save(core.addIndexEntry(model, picked))).open());
+      tool(tools, "edit", paipaT("Edit index"), () => new IndexModal(this, f, model, save).open());
     };
     el.addEventListener("contextmenu", (e) => {
       const f = file();
       if (!model || !f || e.target.closest("a")) return;
       stop(e);
       const menu = new Menu();
-      menu.addItem((i) => i.setTitle("Add entry\u2026").setIcon(icon("add")).onClick(() => new TargetSuggest(this, f, (picked) => save(core.addIndexEntry(model, picked))).open()));
-      menu.addItem((i) => i.setTitle("Edit index\u2026").setIcon(icon("edit")).onClick(() => new IndexModal(this, f, model, save).open()));
+      menu.addItem((i) => i.setTitle(paipaT("Add entry\u2026")).setIcon(icon("add")).onClick(() => new TargetSuggest(this, f, (picked) => save(core.addIndexEntry(model, picked))).open()));
+      menu.addItem((i) => i.setTitle(paipaT("Edit index\u2026")).setIcon(icon("edit")).onClick(() => new IndexModal(this, f, model, save).open()));
       menu.showAtMouseEvent(e);
     });
     child.registerEvent(this.app.metadataCache.on("changed", (f) => {
@@ -1012,16 +1101,16 @@ var SectionBlocks = class extends Plugin {
   }
   entryMenu(event, file, model, entry, save) {
     const menu = new Menu(), last = model.items.length - 1;
-    menu.addItem((i) => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => this.app.workspace.openLinkText(entry.link, file.path, true)));
+    menu.addItem((i) => i.setTitle(paipaT("Open in new tab")).setIcon("file-plus").onClick(() => this.app.workspace.openLinkText(entry.link, file.path, true)));
     if (!entry.auto) {
       menu.addSeparator();
-      menu.addItem((i) => i.setTitle("Rename\u2026").setIcon("pencil").onClick(() => new RenamePrompt(this.app, entry.label, (label) => save(core.editIndexEntry(model, entry.at, { label }))).open()));
-      menu.addItem((i) => i.setTitle("Change target\u2026").setIcon(icon("link")).onClick(() => new TargetSuggest(this, file, (picked) => save(core.editIndexEntry(model, entry.at, { link: picked.link }))).open()));
-      menu.addItem((i) => i.setTitle("Move left").setIcon("arrow-left").setDisabled(entry.at === 0).onClick(() => save(core.moveIndexEntry(model, entry.at, -1))));
-      menu.addItem((i) => i.setTitle("Move right").setIcon("arrow-right").setDisabled(entry.at === last).onClick(() => save(core.moveIndexEntry(model, entry.at, 1))));
+      menu.addItem((i) => i.setTitle(paipaT("Rename\u2026")).setIcon("pencil").onClick(() => new RenamePrompt(this.app, entry.label, (label) => save(core.editIndexEntry(model, entry.at, { label }))).open()));
+      menu.addItem((i) => i.setTitle(paipaT("Change target\u2026")).setIcon(icon("link")).onClick(() => new TargetSuggest(this, file, (picked) => save(core.editIndexEntry(model, entry.at, { link: picked.link }))).open()));
+      menu.addItem((i) => i.setTitle(paipaT("Move left")).setIcon("arrow-left").setDisabled(entry.at === 0).onClick(() => save(core.moveIndexEntry(model, entry.at, -1))));
+      menu.addItem((i) => i.setTitle(paipaT("Move right")).setIcon("arrow-right").setDisabled(entry.at === last).onClick(() => save(core.moveIndexEntry(model, entry.at, 1))));
     }
     menu.addSeparator();
-    menu.addItem((i) => i.setTitle("Remove").setIcon("trash-2").onClick(() => save(core.removeIndexEntry(model, entry))));
+    menu.addItem((i) => i.setTitle(paipaT("Remove")).setIcon("trash-2").onClick(() => save(core.removeIndexEntry(model, entry))));
     menu.showAtMouseEvent(event);
   }
   // Open source-mode editors take the edit as one undoable transaction; otherwise
@@ -1043,7 +1132,7 @@ var SectionBlocks = class extends Plugin {
       done = true;
       return text.slice(0, block.from) + core.serializeIndex(model, block.indent) + text.slice(block.to);
     });
-    if (!done) new Notice("Could not find this index block in the note.");
+    if (!done) new Notice(paipaT("Could not find this index block in the note."));
     return done;
   }
   // ---- Media folders -------------------------------------------------------
@@ -1248,11 +1337,12 @@ var SectionBlocks = class extends Plugin {
   addBlockMenu(menu, editor, target) {
     if (!editor?.cm || !target || typeof target.endLine !== "number") return;
     const snapshot = editor.cm.state.doc;
-    menu.addItem((i) => i.setTitle("Section").setIcon(icon("section")).onClick(() => {
+    menu.addItem((i) => i.setTitle(paipaT("Section")).setIcon(icon("section")).onClick(() => {
       if (editor.cm.state.doc === snapshot) this.createSection(editor.cm, target.endLine, true);
     }));
   }
   async saveSettings() {
+    paipaLang = this.settings.language || "auto";
     await this.saveData(this.settings);
   }
 };
@@ -1264,11 +1354,17 @@ var SectionSettings = class extends PluginSettingTab {
   display() {
     const { containerEl: el } = this;
     el.empty();
-    new Setting(el).setName("Pages root").setDesc("Section pages are created in <root>/<Section title>/. Leave empty for the vault root.").addText((t) => t.setPlaceholder("vault root").setValue(this.plugin.settings.pagesRoot).onChange(async (v) => {
+    new Setting(el).setName(paipaT("Language")).setDesc(paipaT("Follow Obsidian's language, or choose one for this plugin.")).addDropdown((d) => d.addOption("auto", paipaT("Follow Obsidian")).addOption("en", "English").addOption("zh", "中文").setValue(this.plugin.settings.language || "auto").onChange(async (v) => {
+      this.plugin.settings.language = v;
+      await this.plugin.saveSettings();
+      this.display();
+      this.plugin.refreshEditors();
+    }));
+    new Setting(el).setName(paipaT("Pages root")).setDesc(paipaT("Section pages are created in <root>/<Section title>/. Leave empty for the vault root.")).addText((t) => t.setPlaceholder(paipaT("vault root")).setValue(this.plugin.settings.pagesRoot).onChange(async (v) => {
       this.plugin.settings.pagesRoot = v.trim();
       await this.plugin.saveSettings();
     }));
-    new Setting(el).setName("Organize media").setDesc(`Keep every image / video a note shows in a "<note name> media" folder beside the note: files dropped or pasted into the note (or into one of its galleries) are created there, and media the note embeds from elsewhere is moved there. Files already in another note's media folder stay put.`).addToggle((t) => t.setValue(this.plugin.settings.mediaEnabled).onChange(async (v) => {
+    new Setting(el).setName(paipaT("Organize media")).setDesc(paipaT(`Keep every image / video a note shows in a "<note name> media" folder beside the note: files dropped or pasted into the note (or into one of its galleries) are created there, and media the note embeds from elsewhere is moved there. Files already in another note's media folder stay put.`)).addToggle((t) => t.setValue(this.plugin.settings.mediaEnabled).onChange(async (v) => {
       this.plugin.settings.mediaEnabled = v;
       await this.plugin.saveSettings();
     }));
