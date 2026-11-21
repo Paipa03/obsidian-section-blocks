@@ -1,5 +1,5 @@
 /*
- * Section Blocks 1.3.0 - by paipa, MIT License
+ * Section Blocks 1.3.1 - by paipa, MIT License
  * https://github.com/Paipa03/obsidian-section-blocks
  */
 
@@ -910,7 +910,15 @@ var SectionBlocks = class extends Plugin {
   guard(tr) {
     if (!tr.docChanged) return tr;
     const event = tr.annotation(Transaction.userEvent) || "";
-    if (/^(undo|redo)(\.|$)/.test(event)) return tr;
+    if (/^(undo|redo|set)(\.|$)/.test(event)) return tr;
+    if (!event) {
+      let count = 0, whole = false;
+      tr.changes.iterChanges((fromA, toA) => {
+        count++;
+        whole = fromA === 0 && toA === tr.startState.doc.length;
+      });
+      if (count === 1 && whole) return tr;
+    }
     const value = tr.startState.field(this.field, false);
     if (!value || !value.sound) return tr;
     let touched = value.sections.length > 0;
@@ -1079,6 +1087,8 @@ var SectionBlocks = class extends Plugin {
     child.registerEvent(this.app.metadataCache.on("changed", (f) => {
       if (f.path === ctx.sourcePath) render();
     }));
+    // noteText only serves this block's link checks; drop the note's full text when the block goes away.
+    child.register(() => this.noteText.delete(file()?.path || ctx.sourcePath));
     ctx.addChild(child);
     render();
   }
